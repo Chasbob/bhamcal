@@ -8,7 +8,8 @@ def iCalendar(events):
         'VERSION:2.0',
         'PRODID:-//University of Birmingham//Web timetables//EN'
     ])
-
+    counts = Counter(events)
+    events = list(set(events))
     for event in events:
         uid_prefix = event.subject_code + '/' + event.event_type[:3].upper()
         codes[uid_prefix] += 1
@@ -22,6 +23,7 @@ def iCalendar(events):
             "DTEND:" + format_date(event.end),
             "DESCRIPTION:" + event.description.replace('\n', r'\n'),
             "LOCATION:" + event.location,
+            "RRULE:FREQ=WEEKLY;BYDAY=" + str(event.start.strftime("%a")).upper()[:2] + ";COUNT=" + str(counts[event]),
             "END:VEVENT"
         ]
         vevent = '\r\n'.join(vevent)
