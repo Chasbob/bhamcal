@@ -81,6 +81,9 @@ REMOVE_DOUBLES = re.compile(
 
 def clean_subject(subject: str) -> str:
     subject = re.sub(CODE_STRIPPER, "", subject)
-    subject = re.sub(REMOVE_DOUBLES, "", subject)
+    items = subject.split("/")
+    if len(items) == 2:
+        if items[0].lower().strip() == items[1].lower().strip():
+            subject = re.sub(REMOVE_DOUBLES, "", subject)
 
     return subject.strip()
