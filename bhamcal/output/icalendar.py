@@ -1,9 +1,11 @@
 from collections import Counter
 
-def iCalendar(filename, events):
+
+def iCalendar(filename, events, recur):
     codes = Counter()
     counts = Counter(events)
-    events = list(set(events))
+    if recur:
+        events = list(set(events))
     with open(filename, 'w') as output:
         header = [
             'BEGIN:VCALENDAR',
@@ -15,7 +17,11 @@ def iCalendar(filename, events):
         for event in events:
             uid_prefix = event.subject_code + '/' + event.event_type[:3].upper()
             codes[uid_prefix] += 1
-
+            if recur:
+                recurrence = "RRULE:FREQ=WEEKLY;BYDAY=" + str(event.start.strftime("%a")).upper()[:2] + ";COUNT=" + str(
+                    counts[event])
+            else:
+                recurrence = ""
             vevent = [
                 "BEGIN:VEVENT",
                 "UID:" + uid_prefix + str(codes[uid_prefix]),
@@ -25,8 +31,7 @@ def iCalendar(filename, events):
                 "DTEND:" + format_date(event.end),
                 "DESCRIPTION:" + event.description.replace('\n', r'\n'),
                 "LOCATION:" + event.location,
-                "RRULE:FREQ=WEEKLY;BYDAY=" + str(event.start.strftime("%a")).upper()[:2] + ";COUNT=" + str(
-                    counts[event]),
+                recurrence,
                 "END:VEVENT"
             ]
             output.write('\r\n'.join(vevent) + '\r\n')

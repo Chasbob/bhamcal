@@ -24,7 +24,8 @@ from .output.icalendar import iCalendar
               help="Process only events from next week.")
 @click.password_option(confirmation_prompt=False,
               help="Override password to my.bham account.")
-def main(username, password, form, headless, output, week):
+@click.option('-r', '--recur',is_flag=True, help="Attempts to group matching events into a single recurring event")
+def main(username, password, form, headless, output, week,recur):
     fr = frame.Frame(username, password, week)
     log('downloading timetable...', Message.INFO, overwrite=True)
     try:
@@ -44,7 +45,7 @@ def main(username, password, form, headless, output, week):
     if form == 'csv':
         calendar = CSV(output, events)
     elif form == 'ical':
-        calendar = iCalendar(output, events)
+        calendar = iCalendar(output, events, recur)
     else:
         raise ValueError("invalid output format")
     log(f'converted calendar to {form}', Message.INFO)
