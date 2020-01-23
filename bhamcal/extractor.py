@@ -4,9 +4,15 @@ from datetime import datetime
 import pytz
 from bs4 import BeautifulSoup
 
+import spacy
+import re
+
 from .event import CalendarEvent
 
 DEFAULT_TIMEZONE = pytz.timezone('Europe/London')
+
+nlp = spacy.load("en_core_web_sm")
+match = re.compile(r"PUNCT|NUM|SYM")
 
 def extract(frame):
     soup = BeautifulSoup(frame, 'html.parser')
@@ -45,7 +51,7 @@ def extract_event(table_row):
             name = title
             code = title.upper().replace(' ', '')
 
-    name = clean_subject(name)
+    name = clean_subject(title)
 
     # build description
     description = ""
@@ -79,11 +85,21 @@ REMOVE_DOUBLES = re.compile(
     r"(?P<one>^.*/)"
 )
 
-def clean_subject(subject: str) -> str:
-    subject = re.sub(CODE_STRIPPER, "", subject)
-    items = subject.split("/")
-    if len(items) == 2:
-        if items[0].lower().strip() == items[1].lower().strip():
-            subject = re.sub(REMOVE_DOUBLES, "", subject)
-
-    return subject.strip()
+def clean_subject(title: str) -> str:
+    title = re.sub(r'\n', '', title)
+    title = re.sub(r'(\(|\)|\/)', r' \1 ', title)
+    doc = nlp(title)
+    out = []
+    for token in doc:
+        if not(re.match(match, token.pos_)):
+            if not(token.shape_.isupper()) and token.text != 'Extended' and token.text.strip() != '':
+                out.append(token.text)
+    # Check if the first 2 tokens are a subset of rest of the tokens
+    if len(out) >= 4:
+        if set(out[:2]).issubset(set(out[2:])):
+            out = out[2:]
+    # Else check if the first token is a subset of the rest of the tokens
+    elif len(out) >= 2:
+        if set(out[:1]).issubset(set(out[1:])):
+            out = out[1:]
+    return ' '.join(out)
